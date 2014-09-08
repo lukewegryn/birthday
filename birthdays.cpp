@@ -15,15 +15,77 @@ Homework 1
 #include <QCommandLineParser>
 #include <QCoreApplication>
 #include <QList>
+#include <QStringList>
+
+QStringList sortListAlphabetically(QStringList stringList)
+{
+	qSort(stringList.begin(), stringList.end());
+	return stringList;
+
+}
+
+QStringList sortListChronologically(QStringList stringList)
+{
+	QString datesFirst;
+	QString namesFirst;
+	QStringList datesFirstList;
+	QStringList listToReturn;
+	QRegExp expression("(\\ |\\t|\\n)");
+	QStringList lineList;
+	for(int i = 0; i < stringList.size(); i++)
+	{
+		lineList = stringList[i].split(expression);
+		datesFirst = lineList[2] + '\t' + lineList[0] + ' ' + lineList[1] + '\n';
+		datesFirstList.append(datesFirst);
+	}
+
+	qSort(datesFirstList.begin(), datesFirstList.end());
+
+	for(int i = 0; i < datesFirstList.size(); i++)
+	{
+		lineList = datesFirstList[i].split(expression);
+		namesFirst = lineList[1] + ' ' + lineList[2] + '\t' + lineList[0];
+		listToReturn.append(namesFirst);
+	}
+
+	return listToReturn;
+}
+
+QStringList sortListChronologicallyUpdate(QStringList stringList)
+{
+	QString datesFirst;
+	QString namesFirst;
+	QStringList datesFirstList;
+	QStringList listToReturn;
+	QRegExp expression("(\\t|\\n)");
+	QStringList lineList;
+	for(int i = 0; i < stringList.size(); i++)
+	{
+		lineList = stringList[i].split(expression);
+		datesFirst = lineList[1] + '\t' + lineList[0] + '\t' + '  ' + lineList[2] + '\n';
+		datesFirstList.append(datesFirst);
+	}
+
+	qSort(datesFirstList.begin(), datesFirstList.end());
+
+	for(int i = 0; i < datesFirstList.size(); i++)
+	{
+		lineList = datesFirstList[i].split(expression);
+		namesFirst = lineList[1] + '\t' + lineList[0] + '\t' + lineList[2];
+		listToReturn.append(namesFirst);
+	}
+
+	return listToReturn;
+}
 
 void displayDatesWithinRange(int numDays, QFile &file)
 {
+	int outputCounter = 0;
 	QDate dateNow(QDate::currentDate());
 	QString todaysDate = dateNow.toString("yyyy-MM-dd");
 	file.open(QFile::ReadWrite);
 	QTextStream fileStream(&file);
-	qDebug() << "  " << "Name" << "\t" << "Birthday";
-	qDebug() << "  " << "====" << "\t" << "========";
+	QStringList stringList;
 	while(!fileStream.atEnd())
 	{
 
@@ -33,8 +95,23 @@ void displayDatesWithinRange(int numDays, QFile &file)
 		QDate lineDate = QDate::fromString(lineList[2], "yyyy-MM-dd");
 		if(dateNow.daysTo(lineDate) <= numDays && dateNow.daysTo(lineDate) >= 0)
 		{
-			qDebug() << line;
+			outputCounter++;
+			stringList.append(line);
 		}
+	}
+	stringList = sortListChronologically(stringList);
+	if(outputCounter > 0)
+	{
+			qDebug() << "  " << "Name" << "\t" << "Birthday";
+			qDebug() << "  " << "====" << "\t" << "========";
+		for(int i = 0; i < stringList.size(); i++)
+		{
+			qDebug() << stringList[i];
+		}
+	}
+	else{
+		QString temp = "No birthdays to display in the next " + QString::number(numDays) + " days.";
+		qDebug() << temp;
 	}
 	file.close();
 }
@@ -70,6 +147,7 @@ void displayDatesWithinRangeOfPerson(QString name, QFile &file, int numDays)
 		QTextStream fileStream(&file);
 		qDebug() << "  " << "Name" << "\t" << "Birthday";
 		qDebug() << "  " << "====" << "\t" << "========";
+		QStringList stringList;
 		while(!fileStream.atEnd())
 		{
 			QString line = fileStream.readLine();
@@ -78,9 +156,16 @@ void displayDatesWithinRangeOfPerson(QString name, QFile &file, int numDays)
 			QDate lineDate = QDate::fromString(lineList[2], "yyyy-MM-dd");
 			if(dateToCompare.daysTo(lineDate) <= numDays && dateToCompare.daysTo(lineDate) >= 0)
 			{
-				qDebug() << line;
+				//qDebug() << line;
+				stringList.append(line);
 			}
 		}
+		stringList = sortListChronologically(stringList);
+		for(int i = 0; i < stringList.size(); i++)
+		{
+			qDebug() << stringList[i];
+		}
+
 		file.close();
 	}
 }
@@ -108,8 +193,9 @@ void updateAll(QFile &file)
 	QString toWrite;
 	QTextStream fileStream(&file);
 	QStringList lineList;
-	qDebug() << "  " << "Name" << "\t" << "Birthday" << "\t" << "Time Left Until Birthday";
-	qDebug() << "  " << "====" << "\t" << "========" << "\t" << "========================";
+	QStringList stringList;
+	QStringList timeUntilList;
+	int outputCounter = 0;
 	while(!fileStream.atEnd())
 	{
 		bool isUpdated = false;
@@ -158,13 +244,31 @@ void updateAll(QFile &file)
 				stringUntil.append(QString::number(days) + " days");
 			}
 			stringUntil = lineList[0] + " " + lineList[1] + "\t" + lineList[2] + "\t" + stringUntil;
-			qDebug() << stringUntil;
+			//stringList.append(lineList[0] + " " + lineList[1] + "\t" + lineList[2] + "\n");
+			//timeUntilList.append(stringUntil);
+			//qDebug() << stringUntil;
+			stringList.append(stringUntil);
+			outputCounter++;
 		}
 		line = lineList[0] + " " + lineList[1] + "\t" + lineList[2];
 		toWrite.append(line + '\n');
 	}
+	stringList = sortListChronologicallyUpdate(stringList);
+	if(outputCounter > 0)
+	{
+		qDebug() << "  " << "Name" << "\t" << "Birthday" << "\t" << "Time Left Until Birthday";
+		qDebug() << "  " << "====" << "\t" << "========" << "\t" << "========================";
+		for(int i = 0; i < stringList.size(); i++)
+			{
+				qDebug() << stringList[i];
+			}
+	}
+	else{
+		qDebug() << "Nothing to Update";
+	}
 	file.resize(0);
 	fileStream << toWrite;
+
 	file.close();
 }
 
@@ -173,13 +277,31 @@ void searchAndShow(QString name, QFile &file)
 	file.open(QFile::ReadWrite);
 	QString toWrite;
 	QTextStream fileStream(&file);
-	qDebug() << "  " << "Name" << "\t" << "Birthday";
-	qDebug() << "  " << "====" << "\t" << "========";
+	QStringList stringList;
+	int outputCounter = 0;
 	while(!fileStream.atEnd())
 	{
 		QString line = fileStream.readLine();
 		if(line.contains(name))
-			qDebug() << line;
+		{
+			//qDebug() << line;
+			outputCounter++;
+			stringList.append(line);
+		}
+	}
+	stringList = sortListAlphabetically(stringList);
+	if(outputCounter > 0)
+	{
+		qDebug() << "  " << "Name" << "\t" << "Birthday";
+		qDebug() << "  " << "====" << "\t" << "========";
+		for(int i = 0; i < stringList.size(); i++)
+			{
+				qDebug() << stringList[i];
+			}
+	}
+	else
+	{
+		qDebug() << "Search query not found. Please try something else.";
 	}
 	file.close();
 }
